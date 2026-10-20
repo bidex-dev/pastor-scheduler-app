@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pastors Scheduler App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    body {
+      font-family: 'Poppins', Arial, sans-serif;
+      background: #f7f7fa;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 420px;
+      margin: 30px auto;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(56,56,200, 0.13);
+      background: #fff;
+      border-radius: 16px;
+    }
+    h1 {
+      text-align: center;
+      color: #283593;
+      font-size: 2rem;
+      margin-bottom: 4px;
+    }
+    h2 {
+      color: #3f51b5;
+      font-size: 1.1rem;
+      margin: 24px 0 12px 0;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    input, textarea, select {
+      font-family: inherit;
+      font-size: 1rem;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #b6b6d1;
+      outline: none;
+      background: #f5f8ff;
+    }
+    button, .subscribe-btn {
+      background: #3f51b5;
+      color: #fff;
+      border: none;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      padding: 10px 0;
+      font-size: 1rem;
+      transition: background 0.2s;
+      margin-top: 8px;
+    }
+    button:active, .subscribe-btn:active { background: #2d3b8e; }
+    .task-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .task {
+      padding: 14px 10px;
+      margin-bottom: 12px;
+      border-radius: 8px;
+      background: #ecf2ff;
+      border-left: 4px solid #5c6bc0;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .task.done {
+      opacity: 0.5;
+      text-decoration: line-through;
+    }
+    .actions {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+    }
+    .delete-btn {
+      background: #f44336;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+    .complete-btn {
+      background: #43a047;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+    .subscribe-box {
+      background: #fff9e1;
+      padding: 16px 10px;
+      border: 1px solid #ffe082;
+      border-radius: 8px;
+      margin-top: 20px;
+      text-align: center;
+    }
+    .subscribe-btn {
+      background: #ffab00;
+      color: #283593;
+      font-weight: bold;
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px 0;
+    }
+    @media (max-width:500px) {
+      .container { max-width: 99vw !important; padding: 12px }
+      h1 { font-size: 1.1rem }
+      .subscribe-box {padding:10px 4px;}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Pastors Scheduler</h1>
+    <h2>New Task/Activity</h2>
+    <form id="taskForm">
+      <input type="text" id="title" placeholder="Task Title (e.g., Prayer Meeting)" required>
+      <textarea id="desc" placeholder="Details (optional)" rows="2"></textarea>
+      <input type="date" id="date" required>
+      <input type="time" id="time" required>
+      <select id="priority">
+        <option value="Normal">Normal</option>
+        <option value="High">High Priority</option>
+      </select>
+      <button type="submit">Add Task</button>
+    </form>
+    <h2>Scheduled Activities</h2>
+    <ul id="taskList" class="task-list"></ul>
+
+    <div class="subscribe-box">
+      <strong>Upgrade for Full Access</strong>
+      <div style="font-size:.96rem; margin-top:3px">
+        Enjoy unlimited tasks and premium features.
+      </div>
+      <a class="subscribe-btn" href="https://www.flutterwave.com/" target="_blank" id="fwPayBtn">
+        Subscribe with Flutterwave
+      </a>
+      <div style="color:#888; font-size:.96em;margin-top:6px">
+        (Replace with your Flutterwave payment link)
+      </div>
+    </div>
+  </div>
+  <script>
+    const taskForm = document.getElementById('taskForm');
+    const taskList = document.getElementById('taskList');
+
+    let tasks = JSON.parse(localStorage.getItem('pastorSchedulerTasks') || '[]');
+    renderTasks();
+
+    taskForm.onsubmit = function(e) {
+      e.preventDefault();
+      if (tasks.length >= 5) {
+        alert('Limit: 5 tasks. Subscribe for unlimited schedules!');
+        return;
+      }
+      const task = {
+        title: document.getElementById('title').value.trim(),
+        desc: document.getElementById('desc').value.trim(),
+        date: document.getElementById('date').value,
+        time: document.getElementById('time').value,
+        priority: document.getElementById('priority').value,
+        done: false,
+        id: Date.now()
+      };
+      tasks.push(task);
+      localStorage.setItem('pastorSchedulerTasks', JSON.stringify(tasks));
+      renderTasks();
+      taskForm.reset();
+    };
+
+    function renderTasks() {
+      if (!tasks.length) {
+        taskList.innerHTML = '<li style="color:#aaa;padding:12px">No Activities Scheduled</li>';
+        return;
+      }
+      let html = '';
+      tasks
+        .sort((a, b) => new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`))
+        .forEach(task => {
+          html += `
+            <li class="task${task.done?' done':''}">
+              <div>
+                <strong>${task.title}</strong>
+                <span style="float:right; font-size:11px; color:${task.priority==='High'?'#c62828':'#6d6d8d'};font-weight:600">${task.priority}</span>
+              </div>
+              <div style="font-size:13px; margin:2px 0 4px 0; color:#444;">
+                ${task.desc ? task.desc : ''}
+              </div>
+              <div style="font-size:12px; color: #35358e;"><b>Date:</b> ${task.date} <b>Time:</b> ${task.time}</div>
+              <div class="actions">
+                <button class="complete-btn" onclick="markDone(${task.id})">${task.done?'Mark Undone':'Mark Done'}</button>
+                <button class="delete-btn" onclick="deleteTask(${task.id})">Delete</button>
+              </div>
+            </li>
+          `;
+        });
+      taskList.innerHTML = html;
+    }
+
+    window.deleteTask = function(id) {
+      if (confirm('Delete this task?')) {
+        tasks = tasks.filter(t => t.id !== id);
+        localStorage.setItem('pastorSchedulerTasks', JSON.stringify(tasks));
+        renderTasks();
+      }
+    }
+    window.markDone = function(id) {
+      for (let t of tasks) if (t.id===id) t.done=!t.done;
+      localStorage.setItem('pastorSchedulerTasks', JSON.stringify(tasks));
+      renderTasks();
+    }
+  </script>
+</body>
+</html>
