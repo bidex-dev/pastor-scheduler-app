@@ -114,6 +114,14 @@
       width: 100%;
       margin-top: 10px;
       padding: 10px 0;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .subscribe-btn.disabled {
+      background: #ccc;
+      cursor: default;
+      text-decoration: none;
+      color: #666;
     }
     @media (max-width:500px) {
       .container { max-width: 99vw !important; padding: 12px }
@@ -140,32 +148,46 @@
     <h2>Scheduled Activities</h2>
     <ul id="taskList" class="task-list"></ul>
 
-    <div class="subscribe-box">
+    <div class="subscribe-box" id="subscribeBox">
       <strong>Upgrade for Full Access</strong>
       <div style="font-size:.96rem; margin-top:3px">
         Enjoy unlimited tasks and premium features.
       </div>
-      <a class="subscribe-btn" href="https://www.flutterwave.com/" target="_blank" id="fwPayBtn">
+      <a class="subscribe-btn" href="https://your-flutterwave-payment-link" target="_blank" id="fwPayBtn">
         Subscribe with Flutterwave
       </a>
-      <div style="color:#888; font-size:.96em;margin-top:6px">
+      <div style="color:#888; font-size:.96em;margin-top:6px" id="subscriptionStatus">
         (Replace with your Flutterwave payment link)
       </div>
     </div>
   </div>
   <script>
+    // Simulate subscription state (replace with real verification later)
+    // Use localStorage key "pastorSubscribed" === "true" when subscribed
+
     const taskForm = document.getElementById('taskForm');
     const taskList = document.getElementById('taskList');
+    const subscribeBox = document.getElementById('subscribeBox');
+    const fwPayBtn = document.getElementById('fwPayBtn');
+    const subscriptionStatus = document.getElementById('subscriptionStatus');
+
+    let subscribed = localStorage.getItem('pastorSubscribed') === 'true';
+
+    // Limit for free users
+    const FREE_TASK_LIMIT = 5;
 
     let tasks = JSON.parse(localStorage.getItem('pastorSchedulerTasks') || '[]');
     renderTasks();
+    updateSubscriptionUI();
 
     taskForm.onsubmit = function(e) {
       e.preventDefault();
-      if (tasks.length >= 5) {
-        alert('Limit: 5 tasks. Subscribe for unlimited schedules!');
+
+      if (!subscribed && tasks.length >= FREE_TASK_LIMIT) {
+        alert('Free plan limit reached (5 tasks). Please subscribe to add unlimited tasks!');
         return;
       }
+
       const task = {
         title: document.getElementById('title').value.trim(),
         desc: document.getElementById('desc').value.trim(),
@@ -175,6 +197,7 @@
         done: false,
         id: Date.now()
       };
+
       tasks.push(task);
       localStorage.setItem('pastorSchedulerTasks', JSON.stringify(tasks));
       renderTasks();
@@ -221,6 +244,41 @@
       for (let t of tasks) if (t.id===id) t.done=!t.done;
       localStorage.setItem('pastorSchedulerTasks', JSON.stringify(tasks));
       renderTasks();
+    }
+
+    // Update the UI for subscribed or free user
+    function updateSubscriptionUI() {
+      if (subscribed) {
+        subscriptionStatus.textContent = 'Thank you for subscribing! Unlimited tasks unlocked.';
+        fwPayBtn.classList.add('disabled');
+        fwPayBtn.removeAttribute('href');
+        fwPayBtn.style.pointerEvents = 'none';
+      } else {
+        subscriptionStatus.textContent = 'https://flutterwave.com/pay/rhrf1i0bzpkh';
+        fwPayBtn.classList.remove('disabled');
+        fwPayBtn.href = 'https://flutterwave.com/pay/rhrf1i0bzpkh';
+        fwPayBtn.style.pointerEvents = 'auto';
+      }
+    }
+
+    // Demo: pretend subscriber clicks the subscribe button,
+    // We'll "activate" subscription locally.
+    // Replace with real payment verification callback or webhook
+    fwPayBtn.onclick = function(e) {
+      if (subscribed) {
+        e.preventDefault(); // disable if already subscribed
+        alert('You already have full access. Thank you!');
+        return;
+      }
+      // For demo, simulate successful payment:
+      if (confirm('Simulate successful subscription? Click OK to activate premium features.')) {
+        subscribed = true;
+        localStorage.setItem('pastorSubscribed', 'true');
+        updateSubscriptionUI();
+        alert('Subscription active! You can now add unlimited tasks.');
+      } else {
+        e.preventDefault();
+      }
     }
   </script>
 </body>
