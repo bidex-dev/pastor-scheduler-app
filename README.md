@@ -1,2 +1,5 @@
-# pastor-scheduler-app
-Pastor Scheduler App, made with Bidex (bidex247.com)
+# Pastor Scheduler App
+
+A web page. Open `index.html` in a browser.
+
+Made with [Bidex](https://bidex247.com), the AI assistant you pay for in Naira.
